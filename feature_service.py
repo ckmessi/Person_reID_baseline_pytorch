@@ -85,6 +85,8 @@ class FeatureService(object):
         return ff
 
     def feature(self, img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(img)
         img_tensor = self.data_transforms(img)
         img_tensor = img_tensor.expand(1, 3, 288, 144)
         output_feature = self.extract_single_feature(self.model, img_tensor)
