@@ -29,16 +29,21 @@ def remove_finish_from_redis(r, key):
         return True
 
 def rebuild_image(image_str):
-    img = pickle.loads(img_str)
+    img = pickle.loads(image_str)
     return img
 
 def process_redis_list(r, featureService):
-    key, img_value = fetch_one_from_redis(r)
-    if key != None:
-        img = rebuild_image(img_value)
-        output_feature = featureService.extract_single_image(img)
-        write_result_to_redis(r, output_feature)
-        remove_finish_from_redis(r, key)
+    while True:
+        key, img_value = fetch_one_from_redis(r)
+        if key != None:
+            img = rebuild_image(img_value)
+            output_feature = featureService.feature(img)
+            write_result_to_redis(r, key, output_feature)
+            remove_finish_from_redis(r, key)
+            print('process feature finish.')
+        else:
+            print('no image to process')
+            time.sleep(1)
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description='Training')
@@ -49,7 +54,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     r = redis.Redis(host='localhost', port=6379, db=0)
-    featureService = None
+    featureService = FeatureService(opt)
     
     process_redis_list(r, featureService)
 
