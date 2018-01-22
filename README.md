@@ -11,6 +11,10 @@ Some of them (i.e. learning rate) are far from optimal. Do not hesitate to chang
 P.S. With similar structure, we arrived **Rank@1=86.85% mAP=67.29%** with Matconvnet. (batchsize=8, dropout=0.75)
 Different framework need to be tuned in a different way.
 
+**What's new:** Re-ranking is added to evaluation. The re-ranked result is **Rank@1=90.20% mAP=84.76%**.
+
+**What's new:** Random Erasing is added to train.
+
 **What's new:** I add some code to generate training curves. The figure will be saved into the model folder when training.
 
 ![](https://github.com/layumi/Person_reID_baseline_pytorch/blob/master/train.jpg)
@@ -23,6 +27,10 @@ We add one linear layer(bottleneck), one batchnorm layer and relu.
 
 - Python 3.6
 - GPU Memory >= 6G
+- Numpy
+
+**(Some reports found that updating numpy can arrive the right accuracy. If you only get 50~80 Top1 Accuracy, just try it.)**
+We have successfully run the code based on numpy 1.12.1 and 1.13.1 .
 
 ## Getting started
 ### Installation
@@ -69,6 +77,13 @@ python train.py --gpu_ids 0 --name ft_ResNet50 --train_all --batchsize 32  --dat
 
 `--batchsize` batch size.
 
+`--erasing_p` random erasing probability.
+
+Train a model with random erasing by
+```bash
+python train.py --gpu_ids 0 --name ft_ResNet50 --train_all --batchsize 32  --data_dir your_data_path --erasing_p 0.5
+```
+
 ## Test
 Use trained model to extract feature by
 ```bash
@@ -85,11 +100,19 @@ python test.py --gpu_ids 0 --name ft_ResNet50 --test_dir your_data_path  --which
 
 ## Evaluation
 ```bash
-python evaluation.py
+python evaluate.py
 ```
 It will output Rank@1, Rank@5, Rank@10 and mAP results.
 
 For mAP calculation, you also can refer to the [C++ code for Oxford Building](http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/compute_ap.cpp). We use the triangle mAP calculation (consistent with the Market1501 original code).
+
+### re-ranking
+```bash
+python evaluate_rerank.py
+```
+**It may take more than 10G Memory to run.** So run it on a powerful machine if possible. 
+
+It will output Rank@1, Rank@5, Rank@10 and mAP results.
 
 ## Ablation Study
 The model is based on Resnet50. Input images are resized to 256x128.
@@ -102,6 +125,7 @@ Here we just show some results.
 | 16 | 0.5  | 86.67 | 68.19 | |
 | 32 | 0.5  | 87.98 | 69.38 | |
 | 32 | 0.5  | **88.24** | **70.68** | test with 288x144|
+| 32 | 0.5  | **89.13** | **73.50** | train with random erasing and test with 288x144|
 | 32 | 0.5  | 87.14 | 68.90 | 0.1 color jitter|
 | 64 | 0.5  | 86.82 | 67.48 | |
 | 64 | 0.5  | 85.78 | 65.97 | 0.1 color jitter|

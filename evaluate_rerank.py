@@ -2,16 +2,12 @@ import scipy.io
 import torch
 import numpy as np
 import time
-
+from  re_ranking import re_ranking
 #######################################################################
 # Evaluate
-def evaluate(qf,ql,qc,gf,gl,gc):
-    query = qf
-    score = np.dot(gf,query)
-    # predict index
+def evaluate(score,ql,qc,gl,gc):
     index = np.argsort(score)  #from small to large
-    index = index[::-1]
-    #index = index[0:2000]
+    #index = index[::-1]
     # good index
     query_index = np.argwhere(gl==ql)
     camera_index = np.argwhere(gc==qc)
@@ -65,14 +61,24 @@ gallery_label = result['gallery_label'][0]
 
 CMC = torch.IntTensor(len(gallery_label)).zero_()
 ap = 0.0
-#print(query_label)
+#re-ranking
+print('calculate initial distance')
+q_g_dist = np.dot(query_feature, np.transpose(gallery_feature))
+q_q_dist = np.dot(query_feature, np.transpose(query_feature))
+g_g_dist = np.dot(gallery_feature, np.transpose(gallery_feature))
+print('start re-ranking...')
+since = time.time()
+re_rank = re_ranking(q_g_dist, q_q_dist, g_g_dist)
+time_elapsed = time.time() - since
+print('Reranking complete in {:.0f}m {:.0f}s'.format(
+        time_elapsed // 60, time_elapsed % 60))
 for i in range(len(query_label)):
-    ap_tmp, CMC_tmp = evaluate(query_feature[i],query_label[i],query_cam[i],gallery_feature,gallery_label,gallery_cam)
+    ap_tmp, CMC_tmp = evaluate(re_rank[i,:],query_label[i],query_cam[i],gallery_label,gallery_cam)
     if CMC_tmp[0]==-1:
         continue
     CMC = CMC + CMC_tmp
     ap += ap_tmp
-    print(i, CMC_tmp[0])
+    #print(i, CMC_tmp[0])
 
 CMC = CMC.float()
 CMC = CMC/len(query_label) #average CMC

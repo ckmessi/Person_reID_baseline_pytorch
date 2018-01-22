@@ -18,6 +18,7 @@ from PIL import Image
 import time
 import os
 from model import ft_net
+from random_erasing import RandomErasing
 
 #plt.ion()   # interactive mode
 ######################################################################
@@ -30,6 +31,7 @@ parser.add_argument('--data_dir',default='/home/zzheng/Downloads/Market/pytorch'
 parser.add_argument('--train_all', action='store_true', help='use all training data' )
 parser.add_argument('--color_jitter', action='store_true', help='use color jitter in training' )
 parser.add_argument('--batchsize', default=16, type=int, help='batchsize')
+parser.add_argument('--erasing_p', default=0, type=float, help='Random Erasing probability, in [0,1]')
 
 opt = parser.parse_args()
 data_dir = opt.data_dir
@@ -61,6 +63,9 @@ transform_train_list = [
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]
 
+if opt.erasing_p>0:
+    transform_train_list = transform_train_list + [RandomErasing(opt.erasing_p)]
+    
 if opt.color_jitter:
     transform_train_list = [transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0)] + transform_train_list
 
@@ -179,7 +184,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             # deep copy the model
             if phase == 'val':
                 last_model_wts = model.state_dict()
-                save_network(model, epoch)
+                if epoch%10 == 9:
+                    save_network(model, epoch)
                 draw_curve(epoch)
 
         print()
